@@ -121,9 +121,14 @@ final class VerifyEmailAcceptanceTest extends TestCase
 
         parse_str($parsed['query'], $result);
         self::assertIsArray($result);
-        self::assertArrayHasKey('signature', $result, 'Result: '.print_r($result, true).' | Query: '.$parsed['query']);
-        self::assertIsString($result['signature'], 'Signature type: '.gettype($result['signature']));
-        self::assertTrue(hash_equals($expectedSignature, $result['signature']), 'Expected: '.$expectedSignature.' | Actual: '.$result['signature']);
+        self::assertArrayHasKey('signature', $result);
+        self::assertIsString($result['signature']);
+
+        // parse_str URL-decodes the signature, convert it back to URL-safe base64 format
+        $actualSignature = strtr($result['signature'], '+/', '-_');
+        $actualSignature = rtrim($actualSignature, '=');
+
+        self::assertTrue(hash_equals($expectedSignature, $actualSignature));
 
         self::assertSame(
             \sprintf('/verify/user?expires=%s&signature=%s&token=%s', $expiresAt, $expectedSignature, urlencode($expectedToken)),
