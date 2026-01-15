@@ -115,10 +115,14 @@ final class VerifyEmailAcceptanceTest extends TestCase
         $expectedSignature = rtrim($expectedSignature, '=');
 
         $parsed = parse_url($signature);
-        if (false !== $parsed && isset($parsed['query'])) {
-            parse_str($parsed['query'], $result);
-            self::assertTrue(hash_equals($expectedSignature, $result['signature']));
-        }
+        self::assertNotFalse($parsed, 'parse_url should not return false');
+        self::assertIsArray($parsed, 'parse_url should return an array');
+        self::assertArrayHasKey('query', $parsed, 'URL should have a query string');
+
+        parse_str($parsed['query'], $result);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('signature', $result);
+        self::assertTrue(hash_equals($expectedSignature, $result['signature']));
 
         self::assertSame(
             \sprintf('/verify/user?expires=%s&signature=%s&token=%s', $expiresAt, $expectedSignature, urlencode($expectedToken)),
