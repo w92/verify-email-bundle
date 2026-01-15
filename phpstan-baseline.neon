@@ -106,6 +106,11 @@ parameters:
 			path: tests/AcceptanceTests/VerifyEmailAcceptanceTest.php
 
 		-
+			message: "#^Offset 'query' does not exist on array\\{scheme\\?\\: string, host\\?\\: string, port\\?\\: int\\<0, 65535\\>, user\\?\\: string, pass\\?\\: string, path\\?\\: string, query\\?\\: string, fragment\\?\\: string\\}\\.$#"
+			count: 2
+			path: tests/AcceptanceTests/VerifyEmailAcceptanceTest.php
+
+		-
 			message: "#^Parameter \\$uriSigner of method SymfonyCasts\\\\Bundle\\\\VerifyEmail\\\\Tests\\\\AcceptanceTests\\\\VerifyEmailAcceptanceFixture\\:\\:__construct\\(\\) has invalid type Symfony\\\\Component\\\\HttpKernel\\\\UriSigner\\.$#"
 			count: 1
 			path: tests/AcceptanceTests/VerifyEmailAcceptanceTest.php
