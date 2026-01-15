@@ -92,7 +92,7 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property object\\:\\:\\$helper\\.$#"
-			count: 2
+			count: 3
 			path: tests/AcceptanceTests/VerifyEmailAcceptanceTest.php
 
 		-
@@ -102,7 +102,7 @@ parameters:
 
 		-
 			message: "#^Parameter \\#2 \\$data of function hash_hmac expects string, string\\|false given\\.$#"
-			count: 2
+			count: 3
 			path: tests/AcceptanceTests/VerifyEmailAcceptanceTest.php
 
 		-

@@ -122,11 +122,15 @@ final class VerifyEmailHelper implements VerifyEmailHelperInterface
     {
         $parsedUri = parse_url($absoluteUri);
 
+        if (false === $parsedUri) {
+            return '';
+        }
+
         $path = $parsedUri['path'] ?? '';
         $query = $this->getQueryStringFromParsedUrl($parsedUri);
-        $fragment = isset($parsedUri['fragment']) ? '#' . $parsedUri['fragment'] : '';
+        $fragment = isset($parsedUri['fragment']) ? '#'.$parsedUri['fragment'] : '';
 
-        return $path . $query . $fragment;
+        return $path.$query.$fragment;
     }
 
     public function generateSigningString(string $uri): string
@@ -141,10 +145,10 @@ final class VerifyEmailHelper implements VerifyEmailHelperInterface
     private function generateBaseUrl(string $absoluteUri): string
     {
         $parsedUri = parse_url($absoluteUri);
-        $scheme = isset($parsedUri['scheme']) ? $parsedUri['scheme'] . '://' : '';
+        $scheme = isset($parsedUri['scheme']) ? $parsedUri['scheme'].'://' : '';
         $host = $parsedUri['host'] ?? '';
 
-        return $scheme . $host;
+        return $scheme.$host;
     }
 
     private function getSignedUrl(string $uri): string
@@ -155,15 +159,18 @@ final class VerifyEmailHelper implements VerifyEmailHelperInterface
             return $signature;
         }
 
-        return $this->generateBaseUrl($uri) . $signature;
+        return $this->generateBaseUrl($uri).$signature;
     }
 
+    /**
+     * @param array<string, int|string> $parsedUrl
+     */
     public function getQueryStringFromParsedUrl(array $parsedUrl): string
     {
-        if (!array_key_exists('query', $parsedUrl)) {
+        if (!\array_key_exists('query', $parsedUrl)) {
             return '';
         }
 
-        return $parsedUrl['query'] ? ('?' . $parsedUrl['query']) : '';
+        return $parsedUrl['query'] ? ('?'.$parsedUrl['query']) : '';
     }
 }
