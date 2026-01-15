@@ -85,26 +85,43 @@ final class VerifyEmailAcceptanceTest extends TestCase
         $this->assertTrue(true, 'Test correctly does not throw an exception');
     }
 
-    /** @group legacy */
     public function testGenerateSignatureWithRelativePath(): void
     {
         $kernel = $this->getBootedKernel(['use_relative_path' => true]);
+
         $container = $kernel->getContainer();
 
-        /** @var VerifyEmailAcceptanceFixture $testHelper */
-        $testHelper = $container->get(VerifyEmailAcceptanceFixture::class);
-        $helper = $testHelper->helper;
+        /** @var VerifyEmailHelper $helper */
+        $helper = $container->get(VerifyEmailAcceptanceFixture::class)->helper;
 
         $components = $helper->generateSignature('verify-test', '1234', 'jr@rushlow.dev');
-        $actual = $components->getSignedUrl();
 
-        // Ensure it's a relative path (no scheme/host)
-        $this->assertStringStartsWith('/', $actual);
-        $this->assertStringNotContainsString('http', $actual);
+        $signature = $components->getSignedUrl();
 
-        // Validate that it can be verified
-        $helper->validateEmailConfirmation($actual, '1234', 'jr@rushlow.dev');
-        $this->assertTrue(true, 'Test correctly generates and validates relative path signatures');
+        $expiresAt = $components->getExpiresAt()->getTimestamp();
+
+        $expectedUserData = json_encode(['1234', 'jr@rushlow.dev']);
+
+        $expectedToken = base64_encode(hash_hmac('sha256', $expectedUserData, 'foo', true));
+
+        // UriSigner uses URL-safe base64 encoding (RFC 4648)
+        $expectedSignature = strtr(base64_encode(hash_hmac(
+            'sha256',
+            sprintf('/verify/user?expires=%s&token=%s', $expiresAt, urlencode($expectedToken)),
+            'foo',
+            true
+        )), '+/', '-_');
+        $expectedSignature = rtrim($expectedSignature, '=');
+
+        $parsed = parse_url($signature);
+        parse_str($parsed['query'], $result);
+
+
+        self::assertTrue(hash_equals($expectedSignature, $result['signature']));
+        self::assertSame(
+            sprintf('/verify/user?expires=%s&signature=%s&token=%s', $expiresAt, $expectedSignature, urlencode($expectedToken)),
+            strstr($signature, '/verify/user')
+        );
     }
 
     public function testValidateUsingRequestObject(): void
