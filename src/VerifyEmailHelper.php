@@ -38,14 +38,16 @@ final class VerifyEmailHelper implements VerifyEmailHelperInterface
      * @var int The length of time in seconds that a signed URI is valid for after it is created
      */
     private $lifetime;
+    private bool $useRelativePath;
 
-    public function __construct(UrlGeneratorInterface $router, /* no typehint for BC with legacy PHP */ $uriSigner, VerifyEmailQueryUtility $queryUtility, VerifyEmailTokenGenerator $generator, int $lifetime)
+    public function __construct(UrlGeneratorInterface $router, /* no typehint for BC with legacy PHP */ $uriSigner, VerifyEmailQueryUtility $queryUtility, VerifyEmailTokenGenerator $generator, int $lifetime, bool $useRelativePath = false)
     {
         $this->router = $router;
         $this->uriSigner = $uriSigner;
         $this->queryUtility = $queryUtility;
         $this->tokenGenerator = $generator;
         $this->lifetime = $lifetime;
+        $this->useRelativePath = $useRelativePath;
 
         if (!$uriSigner instanceof UriSigner) {
             /** @psalm-suppress UndefinedFunction */
@@ -61,7 +63,7 @@ final class VerifyEmailHelper implements VerifyEmailHelperInterface
         $extraParams['token'] = $this->tokenGenerator->createToken($userId, $userEmail);
         $extraParams['expires'] = $expiryTimestamp;
 
-        $uri = $this->router->generate($routeName, $extraParams, UrlGeneratorInterface::ABSOLUTE_URL);
+        $uri = $this->router->generate($routeName, $extraParams, $this->useRelativePath ? UrlGeneratorInterface::ABSOLUTE_PATH : UrlGeneratorInterface::ABSOLUTE_URL);
 
         $signature = $this->uriSigner->sign($uri);
 
@@ -97,7 +99,13 @@ final class VerifyEmailHelper implements VerifyEmailHelperInterface
             throw new \RuntimeException(\sprintf('An instance of %s is required, provided by symfony/http-kernel >=6.4, to validate an email confirmation.', UriSigner::class));
         }
 
-        if (!$this->uriSigner->checkRequest($request)) {
+        // When using relative paths, we must check against the request URI (path+query)
+        // instead of the full URL to support multi-domain setups
+        $isValid = $this->useRelativePath
+            ? $this->uriSigner->check($request->getRequestUri())
+            : $this->uriSigner->checkRequest($request);
+
+        if (!$isValid) {
             throw new InvalidSignatureException();
         }
 

@@ -85,6 +85,28 @@ final class VerifyEmailAcceptanceTest extends TestCase
         $this->assertTrue(true, 'Test correctly does not throw an exception');
     }
 
+    /** @group legacy */
+    public function testGenerateSignatureWithRelativePath(): void
+    {
+        $kernel = $this->getBootedKernel(['use_relative_path' => true]);
+        $container = $kernel->getContainer();
+
+        /** @var VerifyEmailAcceptanceFixture $testHelper */
+        $testHelper = $container->get(VerifyEmailAcceptanceFixture::class);
+        $helper = $testHelper->helper;
+
+        $components = $helper->generateSignature('verify-test', '1234', 'jr@rushlow.dev');
+        $actual = $components->getSignedUrl();
+
+        // Ensure it's a relative path (no scheme/host)
+        $this->assertStringStartsWith('/', $actual);
+        $this->assertStringNotContainsString('http', $actual);
+
+        // Validate that it can be verified
+        $helper->validateEmailConfirmation($actual, '1234', 'jr@rushlow.dev');
+        $this->assertTrue(true, 'Test correctly generates and validates relative path signatures');
+    }
+
     public function testValidateUsingRequestObject(): void
     {
         if (!class_exists(UriSigner::class)) {
@@ -117,7 +139,10 @@ final class VerifyEmailAcceptanceTest extends TestCase
         $this->assertTrue(true, 'Test correctly does not throw an exception');
     }
 
-    private function getBootedKernel(): KernelInterface
+    /**
+     * @param array<string, mixed> $customConfig
+     */
+    private function getBootedKernel(array $customConfig = []): KernelInterface
     {
         $builder = new ContainerBuilder();
         $builder->autowire(VerifyEmailAcceptanceFixture::class)
@@ -128,7 +153,9 @@ final class VerifyEmailAcceptanceTest extends TestCase
 
         $kernel = new VerifyEmailTestKernel(
             $builder,
-            ['verify-test' => '/verify/user']
+            ['verify-test' => '/verify/user'],
+            [],
+            $customConfig
         );
 
         $kernel->boot();

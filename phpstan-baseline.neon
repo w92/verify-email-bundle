@@ -117,7 +117,7 @@ parameters:
 
 		-
 			message: "#^Call to method sign\\(\\) on an unknown class Symfony\\\\Component\\\\HttpKernel\\\\UriSigner\\.$#"
-			count: 1
+			count: 2
 			path: tests/FunctionalTests/VerifyEmailHelperFunctionalTest.php
 
 		-
@@ -127,7 +127,7 @@ parameters:
 
 		-
 			message: "#^Instantiated class Symfony\\\\Component\\\\HttpKernel\\\\UriSigner not found\\.$#"
-			count: 1
+			count: 2
 			path: tests/FunctionalTests/VerifyEmailHelperFunctionalTest.php
 
 		-

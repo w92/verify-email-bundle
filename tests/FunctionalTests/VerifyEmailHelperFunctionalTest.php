@@ -75,6 +75,32 @@ final class VerifyEmailHelperFunctionalTest extends TestCase
         $this->assertTrue(true, 'Test correctly does not throw an exception');
     }
 
+    /**
+     * @legacy - Remove annotation in 2.0
+     *
+     * @group legacy
+     */
+    public function testGenerateSignatureWithRelativePath(): void
+    {
+        $token = $this->getTestToken();
+
+        $this->mockRouter
+            ->expects($this->once())
+            ->method('generate')
+            ->with('app_verify_route', ['expires' => $this->expiryTimestamp, 'token' => $token])
+            ->willReturn(\sprintf('/verify?expires=%s&token=%s', $this->expiryTimestamp, urlencode($token)))
+        ;
+
+        $helper = $this->getHelperWithRelativePath();
+        $actual = $helper->generateSignature('app_verify_route', '1234', 'jr@rushlow.dev')->getSignedUrl();
+        $expected = $this->uriSigner->sign(\sprintf('/verify?expires=%s&token=%s', $this->expiryTimestamp, urlencode($token)));
+
+        self::assertSame($expected, $actual);
+        // Ensure the generated URL is a relative path
+        self::assertStringStartsWith('/', $actual);
+        self::assertStringNotContainsString('http', $actual);
+    }
+
     private function getTestToken(): string
     {
         return base64_encode(hash_hmac('sha256', json_encode(['1234', 'jr@rushlow.dev']), 'foo', true));
@@ -120,6 +146,24 @@ final class VerifyEmailHelperFunctionalTest extends TestCase
             new VerifyEmailQueryUtility(),
             new VerifyEmailTokenGenerator('foo'),
             3600
+        );
+    }
+
+    private function getHelperWithRelativePath(): VerifyEmailHelperInterface
+    {
+        if (class_exists(UriSigner::class)) {
+            $this->uriSigner = new UriSigner('foo', 'signature');
+        } else {
+            $this->uriSigner = new LegacyUriSigner('foo', 'signature');
+        }
+
+        return new VerifyEmailHelper(
+            $this->mockRouter,
+            $this->uriSigner,
+            new VerifyEmailQueryUtility(),
+            new VerifyEmailTokenGenerator('foo'),
+            3600,
+            true // use relative path
         );
     }
 }
