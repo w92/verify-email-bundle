@@ -106,13 +106,13 @@ final class VerifyEmailAcceptanceTest extends TestCase
         $expectedToken = base64_encode(hash_hmac('sha256', $expectedUserData, 'foo', true));
 
         // UriSigner uses URL-safe base64 encoding (RFC 4648)
-        $expectedSignature = strtr(base64_encode(hash_hmac(
+        $expectedSignatureForUrl = strtr(base64_encode(hash_hmac(
             'sha256',
             \sprintf('/verify/user?expires=%s&token=%s', $expiresAt, urlencode($expectedToken)),
             'foo',
             true
         )), '+/', '-_');
-        $expectedSignature = rtrim($expectedSignature, '=');
+        $expectedSignature = rtrim($expectedSignatureForUrl, '=');
 
         $parsed = parse_url($signature);
         self::assertNotFalse($parsed, 'parse_url should not return false');
@@ -131,7 +131,7 @@ final class VerifyEmailAcceptanceTest extends TestCase
         self::assertTrue(hash_equals($expectedSignature, $actualSignature));
 
         self::assertSame(
-            \sprintf('/verify/user?expires=%s&signature=%s&token=%s', $expiresAt, $expectedSignature, urlencode($expectedToken)),
+            \sprintf('/verify/user?expires=%s&signature=%s&token=%s', $expiresAt, urlencode($expectedSignatureForUrl), urlencode($expectedToken)),
             strstr($signature, '/verify/user')
         );
     }
