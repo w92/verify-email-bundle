@@ -122,6 +122,7 @@ final class VerifyEmailAcceptanceTest extends TestCase
         parse_str($parsed['query'], $result);
         self::assertIsArray($result);
         self::assertArrayHasKey('signature', $result);
+        self::assertIsString($result['signature']);
         self::assertTrue(hash_equals($expectedSignature, $result['signature']));
 
         self::assertSame(
